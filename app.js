@@ -1,50 +1,32 @@
-/**
- * Tool for reading data from D-Link DSP-W215 Home Smart Plug.
- *
- * Usage: enter your PIN code to LOGIN_PWD, change value of HNAP_URL according to your device settings.
- *
- * @type {exports|module.exports}
- */
+// Tool for reading data from D-Link DSP-W215 Home Smart Plug.
+
+// configurazione wifi presa via WPS:
+//   1. router > wireless > wlan2 > Advanced mode > set "WPS mode" = "push button"
+//   2. router > wireless > wlan2 > *WPS accept* button
+//   3. presa > premi pulsante WPS
+//
+// npm install
+// makeself --nocrc --nomd5 --tar-quietly --xz . ~/bin/dsp-w215.run dsp-w215-hnap run.sh
+var DEVICE_IP  = process.argv[2];
+var DEVICE_PIN = process.argv[3];
+var METHOD     = process.argv[4];
+var METHODS    = ['on', 'off', 'state', 'reboot', 'temperature', 'consumption', 'totalConsumption'];
+
+if (process.argv.length != 5 || !METHODS.includes(METHOD)) {
+  console.log(`USAGE: node app.js IP PIN <${METHODS.join('|')}>`);
+  process.exit();
+}//if
+
 var soapclient = require('./js/soapclient');
-var fs = require('fs');
 
-var OUTPUT_FILE = "result.txt";
-var LOGIN_USER = "admin";
-var LOGIN_PWD = "<PIN CODE>";
-var HNAP_URL = "http://192.168.1.128/HNAP1";
-var POLLING_INTERVAL = 60000;
-
-soapclient.login(LOGIN_USER, LOGIN_PWD, HNAP_URL).done(function (status) {
-    if (!status) {
-        throw "Login failed!";
-    }
-    if (status != "success") {
-        throw "Login failed!";
-    }
-    start();
-});
-
-function start(){
-    soapclient.on().done(function (result){
+soapclient.
+  login('admin', DEVICE_PIN, `http://${DEVICE_IP}/HNAP1`).
+  done(function (status) {
+    if (!status || status != "success")
+      throw "Login failed!";
+    
+    soapclient[METHOD]().
+      done(function (result) {
         console.log(result);
-        read();
-    })
-};
-
-function read() {
-    soapclient.consumption().done(function (power) {
-        soapclient.temperature().done(function (temperature) {
-            console.log(new Date().toLocaleString(), power, temperature);
-            save(power, temperature);
-            setTimeout(function () {
-                read();
-            }, POLLING_INTERVAL);
-        });
-    })
-}
-
-function save(power, temperature) {
-    fs.writeFile(OUTPUT_FILE, new Date().toLocaleString() + ";" + power + ";" + temperature + "\r\n", {flag: "a"}, function (err) {
-        if (err) throw err;
-    })
-}
+      });
+  });
