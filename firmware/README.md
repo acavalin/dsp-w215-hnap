@@ -113,9 +113,9 @@ we are going to put a web interface on port 3000.
    
 1. copy local `wwwplug` folder to `/`:
   
-  ~~~shell
-  scp -O -r wwwplug root@192.168.x.y:/
-  ~~~
+   ~~~shell
+   scp -O -r wwwplug root@192.168.x.y:/
+   ~~~
   
 1. System > Reboot > Perform reboot
 
